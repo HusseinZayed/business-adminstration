@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body {
+        font-family: sans;
+      }
+
+      .course {
+        border: 1px solid darkgray;
+        text-align: center;
+        padding: 5px;
+        transition-property: background-color;
+        transition-duration: 1s;
+        cursor: pointer;
+      }
+
+      .course:hover {
+        opacity: 0.8;
+        /*text-shadow: 0px 0px 3px #FFF;*/
+      }
+
+      .header {
+        text-align: center;
+        border: 1px solid black;
+        background-color: #777;
+        color: white;
+        font-weight: bold;
+        text-shadow: 0px 1px 2px black;
+      }
+
+      .prev {
+        background-color: #ccbbff;
+      }
+
+      .direct {
+        background-color: lightBlue;
+      }
+
+      .selected {
+        background-color: #a0dda0;
+      }
+
+      .next {
+        background-color: #ffeeaa;
+      }
+
+      h2 {
+        text-align: center;
+        font-family: serif;
+      }
+
+      input {
+        margin-top: 7px;
+      }
+
+      .switch {
+        position: relative;
+        display: inline-block;
+        line-height: 24px;
+        margin-bottom: 10px;
+        width: 48px;
+        height: 24px;
+      }
+
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        border-radius: 24px;
+        transition: 0.4s;
+      }
+
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 16px;
+        width: 16px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+      }
+
+      input:checked + .slider {
+        background-color: #2196f3;
+      }
+
+      input:focus + .slider {
+        box-shadow: 0 0 1px #2196f3;
+      }
+
+      input:checked + .slider:before {
+        transform: translateX(24px);
+      }
+
+      #div_sel {
+        color: dark-gray;
+        margin: 10px;
+      }
+
+      .program {
+        cursor: pointer;
+        font-size: xx-large;
+        color: lightgray;
+      }
+      .program.active {
+        color: red;
+      }
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+      $(function () {
+        let courses = null;
+       
+        const ai_courses = {
+       // First_Semester
+        MGT101: { name: "Principles of Management", semester: 1, prerequisites: [], hours: 3 },
+        ACC101: { name: "Principles of Accounting 1", semester: 1, prerequisites: [], hours: 3 },
+        MTH101: { name: "Quantitative Methods for Business", semester: 1, prerequisites: [], hours: 3 },
+        MKT101: { name: "Introduction to Marketing", semester: 1, prerequisites: [], hours: 3 },
+        ECN101: { name: "Microeconomics", semester: 1, prerequisites: [], hours: 3 },
+        HU113: { name: "Human Rights", semester: 1, prerequisites: [], hours: 2 },
+   
+        // Second_Semester
+        MGT102: { name: "Organizational Behavior", semester: 2, prerequisites: ["MGT101"], hours: 3 },
+        ACC102: { name: "Principles of Accounting 2", semester: 2, prerequisites: ["ACC101"], hours: 3 },
+        ECN102: { name: "Macroeconomics", semester: 2, prerequisites: ["ECN101"], hours: 3 },
+        FIN101: { name: "Principles of Finance", semester: 2, prerequisites: [], hours: 3 },
+        HU112: { name: "Creative Thinking and Communication Skills", semester: 2, prerequisites: [], hours: 2 },
+        HU211: { name: "Science and Technology", semester: 2, prerequisites: [], hours: 2 },
+    
+    //Third_Semester
+        MGT201: { name: "Human Resource Management", semester: 3, prerequisites: ["MGT101"], hours: 3 },
+        BIS201: { name: "Introduction to Business Informatics", semester: 3, prerequisites: [], hours: 3 },
+        HU201: { name: "Business Environment and Ethics", semester: 3, prerequisites: [], hours: 2 },
+        ECN201: { name: "Money and Banking", semester: 3, prerequisites: ["ECN102"], hours: 3 },
+        MGT202: { name: "Production and Operations Management", semester: 3, prerequisites: ["MGT101"], hours: 3 },
+        HU101: { name: "Introduction to Business", semester: 3, prerequisites: [], hours: 2 },
+        HU111: { name: "Technical Report Writing", semester: 3, prerequisites: [], hours: 2 },
+ 
+    //Fourth_Semester
+        BUS201: { name: "Research Methods", semester: 4, prerequisites: [], hours: 3 },
+        BUS202: { name: "Business Law", semester: 4, prerequisites: [], hours: 2 },
+        BUS203: { name: "Entrepreneurship and Innovation", semester: 4, prerequisites: [], hours: 3 },
+        SCH201: { name: "Logistics & Supply Chain Management", semester: 4, prerequisites: ["MGT101"], hours: 3 },
+        MTH201: { name: "Statistics for Business", semester: 4, prerequisites: ["MTH101"], hours: 3 },
+        HU212: { name: "Contemporary Global Issues", semester: 4, prerequisites: [], hours: 2 },
+
+// Fifth_Semester
+    MGT301: { name: "Organizational Change and Development", semester: 5, prerequisites: ["MGT101"], hours: 3 },
+    MGT303: { name: "Business Communications", semester: 5, prerequisites: ["MGT101"], hours: 3 },
+    MGT304: { name: "Total Quality Management", semester: 5, prerequisites: ["MGT101"], hours: 3 },
+    MGT306: { name: "Entrepreneurial Organizations", semester: 5, prerequisites: ["MGT101"], hours: 3 },
+    MGT311: { name: "Knowledge Management", semester: 5, prerequisites: ["MGT101"], hours: 3 },
+
+    // Sixth_Semester
+    MGT305: { name: "Public Administration", semester: 6, prerequisites: ["MGT101"], hours: 3 },
+    MGT302: { name: "International Business Management", semester: 6, prerequisites: ["FIN101", "MGT202"], hours: 3 },
+    MGT307: { name: "Public Relations", semester: 6, prerequisites: ["MGT101"], hours: 3 },
+    MGT312: { name: "Entrepreneurship & Small Business", semester: 6, prerequisites: ["MGT101"], hours: 3 },
+    MGT313: { name: "Family Business Management", semester: 6, prerequisites: ["MGT101"], hours: 3 },
+    };
+
+        const it_courses = {
+        // First_Semester
+        MGT101: { name: "Principles of Management", semester: 1, prerequisites: [], hours: 3 },
+        ACC101: { name: "Principles of Accounting 1", semester: 1, prerequisites: [], hours: 3 },
+        MTH101: { name: "Quantitative Methods for Business", semester: 1, prerequisites: [], hours: 3 },
+        MKT101: { name: "Introduction to Marketing", semester: 1, prerequisites: [], hours: 3 },
+        ECN101: { name: "Microeconomics", semester: 1, prerequisites: [], hours: 3 },
+        HU113: { name: "Human Rights", semester: 1, prerequisites: [], hours: 2 },
+   
+        // Second_Semester
+        MGT102: { name: "Organizational Behavior", semester: 2, prerequisites: ["MGT101"], hours: 3 },
+        ACC102: { name: "Principles of Accounting 2", semester: 2, prerequisites: ["ACC101"], hours: 3 },
+        ECN102: { name: "Macroeconomics", semester: 2, prerequisites: ["ECN101"], hours: 3 },
+        FIN101: { name: "Principles of Finance", semester: 2, prerequisites: [], hours: 3 },
+        HU112: { name: "Creative Thinking and Communication Skills", semester: 2, prerequisites: [], hours: 2 },
+        HU211: { name: "Science and Technology", semester: 2, prerequisites: [], hours: 2 },
+    
+    //Third_Semester
+        MGT201: { name: "Human Resource Management", semester: 3, prerequisites: ["MGT101"], hours: 3 },
+        BIS201: { name: "Introduction to Business Informatics", semester: 3, prerequisites: [], hours: 3 },
+        HU201: { name: "Business Environment and Ethics", semester: 3, prerequisites: [], hours: 2 },
+        ECN201: { name: "Money and Banking", semester: 3, prerequisites: ["ECN102"], hours: 3 },
+        MGT202: { name: "Production and Operations Management", semester: 3, prerequisites: ["MGT101"], hours: 3 },
+        HU101: { name: "Introduction to Business", semester: 3, prerequisites: [], hours: 2 },
+        HU111: { name: "Technical Report Writing", semester: 3, prerequisites: [], hours: 2 },
+ 
+    //Fourth_Semester
+        BUS201: { name: "Research Methods", semester: 4, prerequisites: [], hours: 3 },
+        BUS202: { name: "Business Law", semester: 4, prerequisites: [], hours: 2 },
+        BUS203: { name: "Entrepreneurship and Innovation", semester: 4, prerequisites: [], hours: 3 },
+        SCH201: { name: "Logistics & Supply Chain Management", semester: 4, prerequisites: ["MGT101"], hours: 3 },
+        MTH201: { name: "Statistics for Business", semester: 4, prerequisites: ["MTH101"], hours: 3 },
+        HU212: { name: "Contemporary Global Issues", semester: 4, prerequisites: [], hours: 2 },
+  
+   // Fifth_Semester
+        ACC301: { name: "Cost Accounting 1", semester: 5, prerequisites: ["ACC102"], hours: 3 },
+        ACC302: { name: "Managerial Accounting 1", semester: 5, prerequisites: ["ACC102"], hours: 3 },
+        ACC303: { name: "Tax Accounting", semester: 5, prerequisites: ["ACC102"], hours: 3 },
+        ACC304: { name: "Advanced Financial Accounting", semester: 5, prerequisites: ["ACC102"], hours: 3 },
+        ACC311: { name: "Accounting and Auditing Professional Ethics", semester: 5, prerequisites: [], hours: 3 },
+   
+    //Sixth_Semester
+        ACC305: { name: "Cost Accounting 2", semester: 6, prerequisites: ["ACC301"], hours: 3 },
+        ACC306: { name: "Accounting Information Systems", semester: 6, prerequisites: ["ACC102"], hours: 3 },
+        ACC307: { name: "Advanced Managerial Accounting", semester: 6, prerequisites: ["ACC302"], hours: 3 },
+        ACC312: { name: "Accounting for Specialized Institutions", semester: 6, prerequisites: ["ACC102"], hours: 3 },
+        ACC313: { name: "Creative Accounting", semester: 6, prerequisites: ["ACC102"], hours: 3 },
+   
+    
+ 
+        };
+
+        function populateCourses(cs) {
+          let coursesTable = document.querySelector("#courses_table");
+          coursesTable.innerHTML = "";
+          courses = cs;
+          Object.keys(courses).forEach(function (c) {
+            let key = c;
+            let course = courses[c];
+            addCourse(key, course);
+            var prerequisites = courses[c].prerequisites;
+            for (var pre of prerequisites) {
+              if (!courses[pre].nextCourses) {
+                courses[pre].nextCourses = [];
+              }
+              courses[pre].nextCourses.push(c);
+            }
+          });
+          selected = [];
+          $(".course").click(function () {
+            var code = this.id;
+            if (!document.querySelector("#selectMulti").checked) {
+              //multiple course selection is disabled
+              selected = [code];
+              $(".course").removeClass("prev");
+              $(".course").removeClass("direct");
+              $(".course").removeClass("selected");
+              $(".course").removeClass("next");
+              markDependency(code, 0);
+            } else {
+              if (selected.indexOf(code) > -1) {
+                //selected course; remove it
+                unselect(code);
+              } else {
+                select(code);
+              }
+            }
+            markNextCourses();
+            showSelected();
+          });
+        }
+        populateCourses(it_courses);
+
+        var selected = [];
+
+        $("#selectMulti").click(function () {
+          selected = [];
+          $(".course").removeClass("prev");
+          $(".course").removeClass("direct");
+          $(".course").removeClass("selected");
+          $(".course").removeClass("next");
+          showSelected();
+          if (this.checked) {
+            $("#legend tr:nth-child(2), #legend tr:nth-child(3)").hide();
+          } else {
+            $("#legend tr:nth-child(2), #legend tr:nth-child(3)").show();
+          }
+        });
+
+        function select(code) {
+          selected.push(code);
+          $("#" + code).addClass("selected");
+          for (var i = 0; i < courses[code].prerequisites.length; i++) {
+            var pre = courses[code].prerequisites[i];
+            if (selected.indexOf(pre) == -1) {
+              select(pre);
+            }
+          }
+        }
+
+        function unselect(code) {
+          selected.splice(selected.indexOf(code), 1);
+          $("#" + code).removeClass("selected");
+
+          if (!courses[code].nextCourses) return;
+
+          for (var i = 0; i < courses[code].nextCourses.length; i++) {
+            var nxt = courses[code].nextCourses[i];
+            if (selected.indexOf(nxt) > -1) {
+              unselect(nxt);
+            }
+          }
+        }
+
+        function showSelected() {
+          var credits = 0;
+          for (var c of selected) {
+            credits += courses[c].hours;
+          }
+
+          //$("#div_sel").html("Selected credit hours: " + credits);
+        }
+
+        function markDependency(start, level) {
+          switch (level) {
+            case 0:
+              $("#" + start).addClass("selected");
+              break;
+            case 1:
+              $("#" + start).addClass("direct");
+              break;
+            default:
+              $("#" + start).addClass("prev");
+              break;
+          }
+
+          for (var dep of courses[start].prerequisites) {
+            markDependency(dep, level + 1);
+          }
+        }
+
+        function markNextCourses() {
+          $(".course").removeClass("next");
+          for (var s of selected) {
+            if (!courses[s].nextCourses) continue;
+            for (var next of courses[s].nextCourses) {
+              if (selected.indexOf(next) == -1) $("#" + next).addClass("next");
+            }
+          }
+        }
+
+        function addCourse(id, course) {
+          let semesterRow = document.querySelector(
+            `#semester-${course.semester}`
+          );
+          if (semesterRow == null) {
+            let coursesTable = document.querySelector("#courses_table");
+            semesterRow = document.createElement("tr");
+            semesterRow.id = `semester-${course.semester}`;
+            let td = document.createElement("td");
+            td.className = "header";
+            td.textContent = `Semester ${course.semester}`;
+            semesterRow.appendChild(td);
+            coursesTable.appendChild(semesterRow);
+          }
+          course_td = document.createElement("td");
+          course_td.setAttribute("id", id);
+          course_td.className = "course";
+          course_td.textContent = course.name;
+          semesterRow.appendChild(course_td);
+        }
+
+        $(".program").click((ev) => {
+          let it = document.querySelector("#it");
+          let ai = document.querySelector("#ai");
+        
+          it.classList.remove("active");
+          ai.classList.remove("active");
+         
+
+          ev.target.classList.add("active");
+
+          if (ev.target.id === "it") {
+            console.log("it selected");
+            populateCourses(it_courses);
+          } else if (ev.target.id === "ai") {
+            console.log("ai selected");
+            populateCourses(ai_courses);
+          } 
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <h2 style="position: fixted; top: 0px">
+     Business Adminstration - ( <span id="it" class="program active">Accounting</span> ) - (
+      <span id="ai" class="program">Management</span>) 
+    </h2>
+    <table id="courses_table">
+      
+    </table>
+    <br />
+
+    <table id="legend">
+      <tr>
+        <td class="selected" style="width: 30px"></td>
+        <td>Selected courses</td>
+      </tr>
+      <tr>
+        <td class="direct" style="width: 30px"></td>
+        <td>Direct prerequisite</td>
+      </tr>
+      <tr>
+        <td class="prev" style="width: 30px"></td>
+        <td>Indirect prerequisite</td>
+      </tr>
+      <tr>
+        <td class="next" style="width: 30px"></td>
+        <td>Next courses</td>
+      </tr>
+    </table>
+<div id="div_sel"></div>
+    <label class="switch">
+      <input id="selectMulti" type="checkbox" />
+      <span class="slider"></span>
+    </label>
+    Select multiple courses
+  </body>
+</html>
+
+ 
